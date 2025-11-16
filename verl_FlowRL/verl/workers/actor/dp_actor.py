@@ -422,7 +422,15 @@ class DataParallelPPOActor(BasePPOActor):
                                                         response_mask=response_mask,
                                                         clip_ratio=self.config.clip_ratio)
                     elif loss_variant == "ablation_z":
-                        policy_loss, data = self.ablation_z(logpf=log_prob, 
+                        policy_loss, data = self.ablation_z(logpf=log_prob,
+                                                        logf_ref=data['ref_log_prob'],
+                                                        logpf_old=old_log_prob,
+                                                        log_z=log_z,
+                                                        reward=advantages,
+                                                        response_mask=response_mask,
+                                                        clip_ratio=self.config.clip_ratio)
+                    elif loss_variant == "ablation_avg_reward_z":
+                        policy_loss, data = self.ablation_avg_reward_z(logpf=log_prob,
                                                         logf_ref=data['ref_log_prob'],
                                                         logpf_old=old_log_prob,
                                                         log_z=log_z,
@@ -626,20 +634,20 @@ class DataParallelPPOActor(BasePPOActor):
 
         # mean of token-level reward → log
         # we set R = exp(advantage); then log_reward = advantage
-        seq_log_reward = verl_F.masked_mean(reward, response_mask, axis=1) 
-        
+        seq_log_reward = verl_F.masked_mean(reward, response_mask, axis=1)
+
         # TB loss residual
         # delta = log_z + avg_logpf - 15 * seq_log_reward - avg_logp_ref
         delta = avg_logpf - 15 * seq_log_reward - avg_logp_ref
 
         # important sampling
         log_w = verl_F.masked_sum(logpf - logpf_old, response_mask, axis=1)  # sum over valid tokens per trajectory
-        imp_w_raw = torch.exp(log_w).detach() 
+        imp_w_raw = torch.exp(log_w).detach()
         imp_w = torch.clamp(imp_w_raw, max=10)
 
         weighted_losses = imp_w * (delta ** 2)
         avg_loss = torch.mean(weighted_losses)
-        
+
         # Loss statistics and PPO-style metrics
         # Compute approximate KL divergence between current policy and reference policy
         approx_kl_ref = logpf - logf_ref  # KL(pi_f || pi_ref)
@@ -664,5 +672,59 @@ class DataParallelPPOActor(BasePPOActor):
                             "actor/ppo_kl": ppo_kl.detach().item(),  # PPO-style KL (current vs old policy)
                             "actor/ref_kl": ref_kl.detach().item(),  # KL with reference policy
                         }
-                        
+
+        return avg_loss, loss_term_dict
+
+    def ablation_avg_reward_z(self, logpf=None, logf_ref=None,  logpf_old=None, log_z=None, reward=None, response_mask=None, clip_ratio=None):
+        """
+        Ablation: Use average of batch rewards as log_z instead of learned log_z
+        """
+        B = reward.shape[0]
+
+        # mean of log p_f / log p_ref over valid tokens
+        avg_logpf = verl_F.masked_mean(logpf, response_mask, axis=1)
+        avg_logp_ref = verl_F.masked_mean(logf_ref, response_mask, axis=1)
+
+        # mean of token-level reward → log
+        # we set R = exp(advantage); then log_reward = advantage
+        seq_log_reward = verl_F.masked_mean(reward, response_mask, axis=1)
+
+        # Ablation: Use average of batch rewards as log_z
+        avg_batch_reward = seq_log_reward.mean().detach()  # scalar, detached to prevent gradient flow
+        log_z_ablation = avg_batch_reward.expand_as(seq_log_reward)  # broadcast to batch size
+
+        # TB loss residual with ablation log_z
+        delta = log_z_ablation + avg_logpf - 15 * seq_log_reward - avg_logp_ref
+
+        # important sampling
+        log_w = verl_F.masked_sum(logpf - logpf_old, response_mask, axis=1)  # sum over valid tokens per trajectory
+        imp_w_raw = torch.exp(log_w).detach()
+        imp_w = torch.clamp(imp_w_raw, max=10)
+
+        weighted_losses = imp_w * (delta ** 2)
+        avg_loss = torch.mean(weighted_losses)
+
+        # Loss statistics and PPO-style metrics
+        # Compute approximate KL divergence between current policy and reference policy
+        approx_kl_ref = logpf - logf_ref  # KL(pi_f || pi_ref)
+        negative_approx_kl = logpf - logpf_old  # KL(pi_f || pi_old) for policy change tracking
+
+        # Compute PPO KL and Reference KL for monitoring
+        ppo_kl = verl_F.masked_mean(-negative_approx_kl, response_mask)
+        ref_kl = verl_F.masked_mean(-approx_kl_ref, response_mask)
+
+        loss_term_dict = {
+                            "actor/log_prob": verl_F.masked_mean(logpf, response_mask).detach().item(),
+                            "actor/old_log_prob": verl_F.masked_mean(logpf_old, response_mask).detach().item(),
+                            "actor/ref_log_prob": verl_F.masked_mean(logf_ref, response_mask).detach().item(),
+                            "actor/log_z": log_z_ablation.mean().detach().item(),
+                            "actor/log_z_original": log_z.squeeze(-1).mean().detach().item() if log_z is not None else 0.0,
+                            "actor/log_reward": verl_F.masked_mean(reward, response_mask).detach().item(),
+                            "actor/final_loss": avg_loss.detach().item(),
+                            "actor/importance_weight_raw": imp_w_raw.mean().detach().item(),
+                            "actor/importance_weight": imp_w.mean().detach().item(),
+                            "actor/ppo_kl": ppo_kl.detach().item(),  # PPO-style KL (current vs old policy)
+                            "actor/ref_kl": ref_kl.detach().item(),  # KL with reference policy
+                        }
+
         return avg_loss, loss_term_dict
