@@ -114,7 +114,11 @@ else:
 def _gettypes(args):
     return tuple(map(type, args))
 
-oargspec = inspect.getargspec
+# Python 3.11+ compatibility: getargspec was removed, use getfullargspec
+if hasattr(inspect, 'getargspec'):
+    oargspec = inspect.getargspec
+else:
+    oargspec = inspect.getfullargspec
 
 def _argspec(func):
     return __targspec(func, oargspec)
@@ -127,10 +131,15 @@ except ImportError:
     IPython = None
 else:
     # Replace IPython's argspec
-    oipyargspec = IPython.core.oinspect.getargspec
+    # Python 3.11+ compatibility
+    if hasattr(IPython.core.oinspect, 'getargspec'):
+        oipyargspec = IPython.core.oinspect.getargspec
+    else:
+        oipyargspec = IPython.core.oinspect.getfullargspec
     def _ipyargspec(func):
         return __targspec(func, oipyargspec, '__orig_arg_ipy__')
-    IPython.core.oinspect.getargspec = _ipyargspec
+    if hasattr(IPython.core.oinspect, 'getargspec'):
+        IPython.core.oinspect.getargspec = _ipyargspec
 
 class overload(object):
     '''Simple function overloading in Python.'''
