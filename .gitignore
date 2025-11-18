@@ -157,3 +157,6 @@ log
 outputs
 .history
 *logs/
+
+# lm-evaluation-harness (external repo)
+verl_Test/lm-evaluation-harness/
