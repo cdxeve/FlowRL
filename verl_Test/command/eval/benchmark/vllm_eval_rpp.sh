@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Model path
-MODEL_PATH="/mnt/petrelfs/linzhouhan/xuekaizhu/from_huoshan/results_model/results_model/ablation_is/is_15_step200"
+# Model path - RPP
+MODEL_PATH="/mnt/petrelfs/linzhouhan/xuekaizhu/from_huoshan/results_model/results_model/merged_model/rpp_qwen7b_tr-dapo_0602_step200_merged"
 
 # GPU configuration
 TENSOR_PARALLEL_SIZE=1  # Number of GPUs to split model across
@@ -11,7 +11,7 @@ DATA_PARALLEL_SIZE=8    # Number of model replicas
 TASKS="gpqa,mmlu"
 
 # Output directory
-OUTPUT_DIR="./results"
+OUTPUT_DIR="./results/rpp"
 
 # Run evaluation
 lm_eval --model vllm \

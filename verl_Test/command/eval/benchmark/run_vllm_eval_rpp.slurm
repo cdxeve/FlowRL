@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition=plm
-#SBATCH --job-name=xuekai_vllm_eval
+#SBATCH --job-name=xuekai_vllm_eval_rpp
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:8
 #SBATCH --cpus-per-task=64
@@ -23,4 +23,4 @@ echo "=========================================="
 
 # Run the evaluation script
 cd /mnt/petrelfs/linzhouhan/xuekaizhu/dev/FlowRL/verl_Test
-bash command/eval/benchmark/vllm_eval.sh
+bash command/eval/benchmark/vllm_eval_rpp.sh
