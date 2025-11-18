@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# LM Evaluation Harness path
+LM_EVAL_PATH="/mnt/petrelfs/linzhouhan/xuekaizhu/dev/FlowRL/verl_Test/lm-evaluation-harness"
+export PYTHONPATH="${LM_EVAL_PATH}:${PYTHONPATH}"
+
 # Model path
 MODEL_PATH="/mnt/petrelfs/linzhouhan/xuekaizhu/from_huoshan/results_model/results_model/ablation_is/is_15_step200"
 
@@ -14,7 +18,8 @@ TASKS="gpqa,mmlu"
 OUTPUT_DIR="./results/flowrl"
 
 # Run evaluation
-lm_eval --model vllm \
+cd ${LM_EVAL_PATH}
+python -m lm_eval --model vllm \
     --model_args pretrained=${MODEL_PATH},tensor_parallel_size=${TENSOR_PARALLEL_SIZE},dtype=auto,gpu_memory_utilization=0.8,data_parallel_size=${DATA_PARALLEL_SIZE},max_model_len=8192 \
     --tasks ${TASKS} \
     --batch_size auto \
