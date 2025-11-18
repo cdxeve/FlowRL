@@ -18,5 +18,5 @@ export TOKENIZERS_PARALLELISM=false
 python -m lm_eval --model hf \
     --model_args pretrained=${MODEL_PATH},dtype=bfloat16,device_map=auto,trust_remote_code=True,parallelize=True,use_accelerate=True,max_length=8192 \
     --tasks ${TASKS} \
-    --batch_size 4 \
+    --batch_size auto \
     --output_path ${OUTPUT_DIR}
