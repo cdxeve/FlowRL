@@ -1,81 +1,96 @@
 #!/usr/bin/env python3
 """
-Check if a model has specific parameters (e.g., proj_z)
+Check if a model checkpoint has specific parameters (e.g., proj_z) in safetensors files
 Usage: python check_model_parameters.py <model_path> [search_term]
 """
 
 import sys
-import torch
-from transformers import AutoModelForCausalLM
+import glob
+from pathlib import Path
 
 def check_model_parameters(model_path, search_term="proj_z"):
     """
-    Load a model and check if it contains parameters matching the search term
+    Check safetensors files for parameters matching the search term
 
     Args:
         model_path: Path to the model checkpoint
         search_term: Parameter name to search for (default: "proj_z")
     """
     print("="*60)
-    print(f"Loading model from: {model_path}")
+    print(f"Checking checkpoint files in: {model_path}")
     print("="*60)
 
     try:
-        # Load the model (CPU only, no GPU)
-        import os
-        os.environ["CUDA_VISIBLE_DEVICES"] = ""  # Hide all GPUs
+        from safetensors import safe_open
 
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            torch_dtype=torch.float16,
-            device_map="cpu",  # Load to CPU to avoid GPU memory issues
-            trust_remote_code=True,
-            low_cpu_mem_usage=True
-        )
+        model_path = Path(model_path)
 
-        print(f"✓ Model loaded successfully!")
-        print(f"Model type: {type(model).__name__}")
-        print("="*60)
+        # Find all safetensors files
+        safetensor_files = list(model_path.glob("*.safetensors"))
 
-        # Get all parameter names
-        all_params = list(model.named_parameters())
-        print(f"Total parameters: {len(all_params)}")
-        print("="*60)
+        if not safetensor_files:
+            print("✗ No safetensors files found!")
+            print("This model might use .bin format (PyTorch) instead.")
+            return
 
-        # Search for the specific parameter
-        print(f"\nSearching for parameters containing '{search_term}'...")
-        print("-"*60)
+        print(f"Found {len(safetensor_files)} safetensors file(s)")
+        print("")
 
+        # Collect all keys from all files
+        all_keys = []
         found_params = []
-        for name, param in all_params:
-            if search_term.lower() in name.lower():
-                found_params.append((name, param))
+
+        for file in safetensor_files:
+            print(f"Checking: {file.name}")
+            with safe_open(file, framework="pt") as f:
+                file_keys = list(f.keys())
+                all_keys.extend(file_keys)
+
+                # Search in this file
+                matching = [k for k in file_keys if search_term.lower() in k.lower()]
+                if matching:
+                    for key in matching:
+                        tensor = f.get_tensor(key)
+                        found_params.append((key, tensor.shape, file.name))
+
+        print("")
+        print("="*60)
+        print(f"Total parameters in checkpoint: {len(all_keys)}")
+        print("="*60)
+        print("")
+
+        # Report results
+        print(f"Searching for parameters containing '{search_term}'...")
+        print("-"*60)
 
         if found_params:
             print(f"✓ Found {len(found_params)} parameter(s) matching '{search_term}':")
             print("")
-            for name, param in found_params:
+            for name, shape, filename in found_params:
                 print(f"  - Name: {name}")
-                print(f"    Shape: {param.shape}")
-                print(f"    Dtype: {param.dtype}")
-                print(f"    Device: {param.device}")
+                print(f"    Shape: {shape}")
+                print(f"    File: {filename}")
                 print("")
         else:
             print(f"✗ No parameters found containing '{search_term}'")
             print("")
-            print("Here are all parameter names (first 20):")
+            print("First 20 parameter names in checkpoint:")
             print("-"*60)
-            for i, (name, param) in enumerate(all_params[:20]):
-                print(f"  {i+1}. {name} - {param.shape}")
-            if len(all_params) > 20:
-                print(f"  ... and {len(all_params) - 20} more")
+            for i, key in enumerate(all_keys[:20]):
+                print(f"  {i+1}. {key}")
+            if len(all_keys) > 20:
+                print(f"  ... and {len(all_keys) - 20} more")
 
+        print("")
         print("="*60)
         print("Check complete!")
         print("="*60)
 
+    except ImportError:
+        print("✗ Error: safetensors library not installed")
+        print("Install with: pip install safetensors")
     except Exception as e:
-        print(f"✗ Error loading model: {e}")
+        print(f"✗ Error checking checkpoint: {e}")
         import traceback
         traceback.print_exc()
 
