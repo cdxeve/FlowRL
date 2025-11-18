@@ -1,9 +1,9 @@
 #!/bin/bash
-set -x 
+set -x
 
-BACKEND="fsdp"  
-LOCAL_DIR="<YOUR_WEIGHT_PATH>"
-TARGET_DIR="<YOUR_TARGET_PATH>"
+BACKEND="fsdp"
+LOCAL_DIR="/mnt/petrelfs/linzhouhan/xuekaizhu/dev/FlowRL/checkpoints/FlowRL/math/7B/flowrl_qwen_7b_1116_ablation_avg_reward_z"
+TARGET_DIR="/mnt/petrelfs/linzhouhan/xuekaizhu/verl_FlowRL/outputs/merged_models/flowrl_qwen_7b_1116_ablation_avg_reward_z"
 
 PYTHONPATH=. python scripts/model_merger.py merge \
   --backend $BACKEND \
