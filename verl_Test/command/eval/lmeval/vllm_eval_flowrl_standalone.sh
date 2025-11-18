@@ -12,7 +12,7 @@ MODEL_PATH="/mnt/petrelfs/linzhouhan/xuekaizhu/from_huoshan/results_model/result
 
 # GPU configuration
 TENSOR_PARALLEL_SIZE=1  # Number of GPUs to split model across
-DATA_PARALLEL_SIZE=8    # Number of model replicas
+DATA_PARALLEL_SIZE=1    # Number of model replicas (using 1 to avoid multiprocessing issues)
 
 # Tasks to evaluate (comma-separated)
 TASKS="gpqa,mmlu"
