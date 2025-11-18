@@ -1,6 +1,9 @@
 #!/bin/bash
 set -x
 
+# Fix CUDA multiprocessing issue with vLLM
+export VLLM_WORKER_MULTIPROC_METHOD=spawn
+
 # Model path - RPP
 MODEL_PATH="/mnt/petrelfs/linzhouhan/xuekaizhu/from_huoshan/results_model/results_model/merged_model/rpp_qwen7b_tr-dapo_0602_step200_merged"
 

@@ -4,8 +4,11 @@
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:8
 #SBATCH --cpus-per-task=64
-#SBATCH --output=./logs/%j.out
-#SBATCH --error=./logs/%j.err
+#SBATCH --output=/mnt/petrelfs/linzhouhan/xuekaizhu/dev/FlowRL/verl_Test/lm-evaluation-harness/logs/%j.out
+#SBATCH --error=/mnt/petrelfs/linzhouhan/xuekaizhu/dev/FlowRL/verl_Test/lm-evaluation-harness/logs/%j.err
+
+# Change to lm-evaluation-harness directory
+cd /mnt/petrelfs/linzhouhan/xuekaizhu/dev/FlowRL/verl_Test/lm-evaluation-harness
 
 # Create logs directory if it doesn't exist
 mkdir -p logs
@@ -19,8 +22,8 @@ echo "Job ID: $SLURM_JOB_ID"
 echo "Job Name: $SLURM_JOB_NAME"
 echo "Node: $SLURM_NODELIST"
 echo "Start Time: $(date)"
+echo "Working Directory: $(pwd)"
 echo "=========================================="
 
-# Run the evaluation script from lm-evaluation-harness
-cd /mnt/petrelfs/linzhouhan/xuekaizhu/dev/FlowRL/verl_Test/lm-evaluation-harness
-bash benchmark_scripts/vllm_eval_flowrl_standalone.sh
+# Run the evaluation script using absolute path
+bash /mnt/petrelfs/linzhouhan/xuekaizhu/dev/FlowRL/verl_Test/command/eval/lmeval/vllm_eval_flowrl_standalone.sh

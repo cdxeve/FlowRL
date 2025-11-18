@@ -1,6 +1,9 @@
 #!/bin/bash
 set -x
 
+# Fix CUDA multiprocessing issue with vLLM
+export VLLM_WORKER_MULTIPROC_METHOD=spawn
+
 # Model path
 MODEL_PATH="/mnt/petrelfs/linzhouhan/xuekaizhu/from_huoshan/results_model/results_model/ablation_is/is_15_step200"
 
