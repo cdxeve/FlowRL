@@ -23,7 +23,7 @@ echo "=========================================="
 echo "Evaluating: ablation_avg_reward_z_step100"
 OUTPUT_DIR_AVG="/mnt/petrelfs/linzhouhan/xuekaizhu/dev/FlowRL/verl_Test/outputs/flowrl_qwen_7b_1116_ablation_avg_reward_z_step100"
 
-python3 -m recipe.r1.main_eval \
+python3 -m recipe.r1.main_eval_roboost_version \
     data.path=$OUTPUT_DIR_AVG/test-output-16.parquet \
     data.prompt_key=prompt \
     data.response_key=responses \
