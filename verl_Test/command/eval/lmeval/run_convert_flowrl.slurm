@@ -3,7 +3,7 @@
 #SBATCH --job-name=xuekai_convert_flowrl
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=32
 #SBATCH --output=./logs/%j.out
 #SBATCH --error=./logs/%j.err
 
