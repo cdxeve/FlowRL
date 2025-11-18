@@ -1,15 +1,8 @@
 #!/bin/bash
 set -x
 
-# Fix CUDA multiprocessing issue with vLLM
-export VLLM_WORKER_MULTIPROC_METHOD=spawn
-
-# Model path
+# Model path - FlowRL (uses custom architecture with proj_z)
 MODEL_PATH="/mnt/petrelfs/linzhouhan/xuekaizhu/from_huoshan/results_model/results_model/ablation_is/is_15_step200"
-
-# GPU configuration
-TENSOR_PARALLEL_SIZE=1  # Number of GPUs to split model across
-DATA_PARALLEL_SIZE=8    # Number of model replicas
 
 # Tasks to evaluate (comma-separated)
 TASKS="gpqa,mmlu"
@@ -17,9 +10,10 @@ TASKS="gpqa,mmlu"
 # Output directory
 OUTPUT_DIR="./results/flowrl"
 
-# Run evaluation
-python -m lm_eval --model vllm \
-    --model_args pretrained=${MODEL_PATH},tensor_parallel_size=${TENSOR_PARALLEL_SIZE},dtype=auto,gpu_memory_utilization=0.8,data_parallel_size=${DATA_PARALLEL_SIZE},max_model_len=8192 \
+# Run evaluation using HuggingFace (vLLM doesn't support FlowRL's custom architecture)
+# Note: HF is slower than vLLM but works with custom model modifications like proj_z
+python -m lm_eval --model hf \
+    --model_args pretrained=${MODEL_PATH},dtype=bfloat16,device_map=auto,trust_remote_code=True \
     --tasks ${TASKS} \
-    --batch_size auto \
+    --batch_size 1 \
     --output_path ${OUTPUT_DIR}
