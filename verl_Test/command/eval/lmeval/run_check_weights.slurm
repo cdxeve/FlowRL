@@ -3,7 +3,7 @@
 #SBATCH --job-name=xuekai_check_weights
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=32
 #SBATCH --output=./logs/%j.out
 #SBATCH --error=./logs/%j.err
 
