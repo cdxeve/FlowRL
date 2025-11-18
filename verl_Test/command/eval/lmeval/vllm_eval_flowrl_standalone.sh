@@ -10,10 +10,13 @@ TASKS="gpqa,mmlu"
 # Output directory
 OUTPUT_DIR="./results/flowrl"
 
-# Run evaluation using HuggingFace (vLLM doesn't support FlowRL's custom architecture)
-# Note: HF is slower than vLLM but works with custom model modifications like proj_z
+# Transformers optimizations
+export TOKENIZERS_PARALLELISM=false
+
+# Run evaluation using HuggingFace Transformers (vLLM doesn't support FlowRL's custom architecture)
+# Optimizations: parallelism, larger batch size, use_accelerate for multi-GPU
 python -m lm_eval --model hf \
-    --model_args pretrained=${MODEL_PATH},dtype=bfloat16,device_map=auto,trust_remote_code=True \
+    --model_args pretrained=${MODEL_PATH},dtype=bfloat16,device_map=auto,trust_remote_code=True,parallelize=True,use_accelerate=True,max_length=8192 \
     --tasks ${TASKS} \
-    --batch_size 1 \
+    --batch_size 4 \
     --output_path ${OUTPUT_DIR}
