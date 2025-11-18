@@ -21,7 +21,7 @@ echo "=========================================="
 
 # Evaluation for ablation_avg_reward_z step100
 echo "Evaluating: ablation_avg_reward_z_step100"
-OUTPUT_DIR_AVG="/mnt/petrelfs/linzhouhan/xuekaizhu/verl_FlowRL/outputs/flowrl_qwen_7b_1116_ablation_avg_reward_z_step100"
+OUTPUT_DIR_AVG="/mnt/petrelfs/linzhouhan/xuekaizhu/dev/FlowRL/verl_Test/outputs/flowrl_qwen_7b_1116_ablation_avg_reward_z_step100"
 
 python3 -m recipe.r1.main_eval \
     data.path=$OUTPUT_DIR_AVG/test-output-16.parquet \
