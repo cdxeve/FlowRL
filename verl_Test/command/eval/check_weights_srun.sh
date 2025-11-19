@@ -1,0 +1,1 @@
+srun --partition=plm --nodes=1 --ntasks=1 --cpus-per-task=32 bash command/eval/check_flowrl_weights.sh
