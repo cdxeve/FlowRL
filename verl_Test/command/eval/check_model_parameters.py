@@ -7,6 +7,73 @@ Usage: python check_model_parameters.py <model_path> [search_term]
 import sys
 import glob
 from pathlib import Path
+import warnings
+
+def load_model_with_transformers(model_path):
+    """
+    Load model using HuggingFace transformers to see warnings and errors
+
+    Args:
+        model_path: Path to the model checkpoint
+    """
+    print("="*60)
+    print("Loading model with HuggingFace Transformers...")
+    print("="*60)
+    print("")
+
+    try:
+        from transformers import AutoModelForCausalLM, AutoConfig
+        import torch
+
+        print(f"Model path: {model_path}")
+        print("Loading with low_cpu_mem_usage=True, torch_dtype=auto...")
+        print("")
+
+        # Capture warnings
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+
+            # Load model
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                torch_dtype="auto",
+                low_cpu_mem_usage=True,
+                device_map="cpu"  # Keep on CPU to avoid GPU memory usage
+            )
+
+            # Print any warnings
+            if w:
+                print(f"⚠️  Caught {len(w)} warning(s) during model loading:")
+                print("-"*60)
+                for warning in w:
+                    print(f"  {warning.category.__name__}: {warning.message}")
+                print("")
+            else:
+                print("✓ No warnings during model loading")
+                print("")
+
+        # Print model info
+        print("Model loaded successfully!")
+        print(f"Model type: {type(model).__name__}")
+        print(f"Total parameters: {sum(p.numel() for p in model.parameters()):,}")
+        print("")
+
+        # Clean up
+        del model
+        torch.cuda.empty_cache()
+
+        print("="*60)
+        print("")
+
+    except ImportError:
+        print("✗ Error: transformers or torch not installed")
+        print("Install with: pip install transformers torch")
+        print("")
+    except Exception as e:
+        print(f"✗ Error loading model: {e}")
+        import traceback
+        traceback.print_exc()
+        print("")
 
 def check_model_parameters(model_path, search_term="proj_z"):
     """
@@ -99,6 +166,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         model_path = sys.argv[1]
         print(f"Using provided model path: {model_path}")
+        print("")
     else:
         print("Usage: python check_model_parameters.py <model_path> [search_term]")
         print("Example: python check_model_parameters.py /path/to/model proj_z")
@@ -110,4 +178,8 @@ if __name__ == "__main__":
     print(f"Searching for parameters containing: '{search_term}'")
     print("")
 
+    # First, try loading the model with HuggingFace to see warnings
+    load_model_with_transformers(model_path)
+
+    # Then, check the actual safetensors files
     check_model_parameters(model_path, search_term)
